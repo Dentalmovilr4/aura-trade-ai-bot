@@ -12,7 +12,7 @@ Sistema de trading automatizado con inteligencia artificial que genera señales 
 
 ⚙️ Instalación
 
-git clone https://github.com/tu-usuario/aura-trade-ai-bot.git
+git clone https://github.com/Dentalmovilr4/aura-trade-ai-bot.git
 cd aura-trade-ai-bot
 pip install -r requirements.txt
 
