@@ -1,50 +1,50 @@
 import time
 from data_loader import DataLoader
-from trainer import Trainer
 from strategy import Strategy
 from risk_management import RiskManager
 from signal_sender import SignalSender
 from database import Database
-from backtesting import Backtester
+from execution import Executor
+from ai.dataset import DatasetBuilder
+from ai.model_lstm import LSTMModel
 
 loader = DataLoader()
-trainer = Trainer()
 strategy = Strategy()
 risk = RiskManager()
 sender = SignalSender()
 db = Database()
+executor = Executor()
 
 print("📡 Cargando datos...")
-data = loader.get_data(limit=500)
+data_1m, data_5m = loader.get_multi_timeframe()
 
-print("🧠 Entrenando modelo...")
-try:
-    model = trainer.train(data)
-    strategy.model = model
-except Exception as e:
-    print(f"⚠️ Error entrenando modelo: {e}")
-    exit()
+# 🧠 ENTRENAMIENTO IA
+print("🧠 Entrenando IA Deep Learning...")
+dataset = DatasetBuilder()
+X, y = dataset.build(data_1m)
 
-print("📊 Backtesting...")
-bt = Backtester(strategy)
-results = bt.run(data)
+model = LSTMModel()
+model.train(X, y)
+model.save()
 
-print("💰 Balance:", results["balance"])
-print("📊 Trades:", results["trades"])
-print("🎯 Winrate:", results["winrate"], "%")
+strategy.model = model
 
-print("🚀 Bot en ejecución...")
+print("🚀 Bot en vivo...")
 
 while True:
-    data = loader.get_data(limit=500)
-    strategy.data = data
+    data_1m, data_5m = loader.get_multi_timeframe()
+
+    strategy.data_1m = data_1m
+    strategy.data_5m = data_5m
 
     signal = strategy.generate_signal()
 
     if risk.validate(signal) and signal != "HOLD":
         msg = f"🚨 {signal}"
         print(msg)
+
         sender.send(msg)
         db.insert(signal)
+        executor.execute(signal)
 
     time.sleep(60)
