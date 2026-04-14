@@ -7,78 +7,61 @@ class DataLoader:
     def __init__(self):
         self.base_url = "https://api.bybit.com"
 
-    def safe_request(self, url, params, retries=3):
-        for i in range(retries):
-            try:
-                response = requests.get(url, params=params, timeout=10)
+    def safe_request(self, url, params):
+        try:
+            response = requests.get(url, params=params, timeout=10)
 
-                if response.status_code != 200:
-                    print(f"⚠️ HTTP Error {response.status_code}")
-                    time.sleep(1)
-                    continue
+            if response.status_code != 200:
+                print(f"⚠️ HTTP {response.status_code}")
+                return None
 
-                try:
-                    return response.json()
-                except Exception:
-                    print("⚠️ Error decodificando JSON")
-                    time.sleep(1)
-                    continue
+            data = response.json()
 
-            except requests.exceptions.RequestException as e:
-                print(f"⚠️ Request error: {e}")
-                time.sleep(1)
+            if "result" not in data:
+                print("⚠️ Respuesta inválida")
+                return None
 
-        return None
+            return data
 
-    def get_historical_data(self, symbol="BTCUSDT", interval="1", total=500):
+        except Exception as e:
+            print(f"⚠️ Error request: {e}")
+            return None
+
+    def get_data(self, symbol="BTCUSDT", interval="1", limit=200):
         url = f"{self.base_url}/v5/market/kline"
-        all_data = []
 
-        while len(all_data) < total:
-            params = {
-                "category": "linear",
-                "symbol": symbol,
-                "interval": interval,
-                "limit": 200
-            }
+        params = {
+            "category": "linear",
+            "symbol": symbol,
+            "interval": interval,
+            "limit": limit
+        }
 
-            res = self.safe_request(url, params)
+        res = self.safe_request(url, params)
 
-            if res is None:
-                print("❌ No se pudo obtener datos")
-                break
-
-            if "result" not in res or "list" not in res["result"]:
-                print(f"❌ Respuesta inválida: {res}")
-                break
-
-            data = res["result"]["list"]
-
-            if not data:
-                break
-
-            all_data.extend(data)
-
-            time.sleep(0.2)  # evita rate limit
-
-            if len(data) < 200:
-                break
-
-        if not all_data:
+        if res is None:
             return pd.DataFrame()
 
-        all_data.reverse()
+        raw = res["result"].get("list", [])
 
-        df = pd.DataFrame(all_data, columns=[
-            "time","open","high","low","close","volume","turnover"
-        ])
+        if not raw:
+            return pd.DataFrame()
 
-        df["close"] = df["close"].astype(float)
+        raw.reverse()
+
+        df = pd.DataFrame(raw)
+
+        # 🔥 FORZAR columna close correctamente
+        try:
+            df["close"] = df[4].astype(float)
+        except Exception:
+            print("❌ Error creando columna close")
+            return pd.DataFrame()
 
         return df[["close"]]
 
     def get_multi_timeframe(self):
-        data_1m = self.get_historical_data(interval="1", total=500)
-        data_5m = self.get_historical_data(interval="5", total=500)
+        data_1m = self.get_data(interval="1")
+        data_5m = self.get_data(interval="5")
 
         return data_1m, data_5m
