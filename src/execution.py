@@ -6,6 +6,9 @@ class Executor:
 
     def execute(self, signal):
         if signal == "BUY":
+            print("🟢 Ejecutando BUY en Bybit")
             self.exchange.market_buy()
+
         elif signal == "SELL":
+            print("🔴 Ejecutando SELL en Bybit")
             self.exchange.market_sell()
