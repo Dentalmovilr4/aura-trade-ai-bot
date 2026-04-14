@@ -2,37 +2,48 @@ from indicators import calculate_ema, calculate_rsi
 
 class Strategy:
     def __init__(self):
+        self.data_1m = None
+        self.data_5m = None
         self.model = None
-        self.data = None
 
-    def generate_signal(self):
-        df = self.data.copy()
-
+    def analyze(self, df):
         df['ema50'] = calculate_ema(df, 50)
         df['ema200'] = calculate_ema(df, 200)
         df['rsi'] = calculate_rsi(df)
 
         df = df.dropna()
+        if len(df) < 50:
+            return None
 
-        if len(df) < 10:
+        return df.iloc[-1]
+
+    def generate_signal(self):
+        row_1m = self.analyze(self.data_1m)
+        row_5m = self.analyze(self.data_5m)
+
+        if row_1m is None or row_5m is None:
             return "HOLD"
 
-        row = df.iloc[-1]
+        trend_up = row_1m['ema50'] > row_1m['ema200'] and row_5m['ema50'] > row_5m['ema200']
+        trend_down = row_1m['ema50'] < row_1m['ema200'] and row_5m['ema50'] < row_5m['ema200']
 
-        trend_up = row['ema50'] > row['ema200']
-        trend_down = row['ema50'] < row['ema200']
-
-        # 🔥 FILTRO INTELIGENTE
-        if trend_up and row['rsi'] < 35:
-            return "BUY"
-
-        if trend_down and row['rsi'] > 65:
-            return "SELL"
-
-        # IA solo si hay indecisión
         if self.model:
-            features = [row['close'], row['ema50'], row['rsi']]
-            prediction = self.model.predict(features)
-            return "BUY" if prediction == 1 else "SELL"
+            features = [
+                row_1m['close'],
+                row_1m['ema50'],
+                row_1m['ema200'],
+                row_1m['rsi']
+            ]
+            ai_decision = self.model.predict(features)
+        else:
+            ai_decision = None
+
+        if trend_up and row_1m['rsi'] < 40:
+            if ai_decision == 1:
+                return "BUY"
+
+        if trend_down and row_1m['rsi'] > 60:
+            if ai_decision == 0:
+                return "SELL"
 
         return "HOLD"
