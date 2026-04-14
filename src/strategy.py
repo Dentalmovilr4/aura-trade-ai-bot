@@ -6,16 +6,33 @@ class Strategy:
         self.data = None
 
     def generate_signal(self):
-        self.data['ema'] = calculate_ema(self.data)
-        self.data['rsi'] = calculate_rsi(self.data)
+        df = self.data.copy()
 
-        row = self.data.iloc[-1]
-        features = [row['close'], row['ema'], row['rsi']]
+        df['ema50'] = calculate_ema(df, 50)
+        df['ema200'] = calculate_ema(df, 200)
+        df['rsi'] = calculate_rsi(df)
 
-        if row['rsi'] < 30:
+        df = df.dropna()
+
+        if len(df) < 10:
+            return "HOLD"
+
+        row = df.iloc[-1]
+
+        trend_up = row['ema50'] > row['ema200']
+        trend_down = row['ema50'] < row['ema200']
+
+        # 🔥 FILTRO INTELIGENTE
+        if trend_up and row['rsi'] < 35:
             return "BUY"
-        elif row['rsi'] > 70:
+
+        if trend_down and row['rsi'] > 65:
             return "SELL"
 
-        prediction = self.model.predict(features)
-        return "BUY" if prediction == 1 else "SELL"
+        # IA solo si hay indecisión
+        if self.model:
+            features = [row['close'], row['ema50'], row['rsi']]
+            prediction = self.model.predict(features)
+            return "BUY" if prediction == 1 else "SELL"
+
+        return "HOLD"
