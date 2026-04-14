@@ -15,27 +15,34 @@ sender = SignalSender()
 db = Database()
 
 print("📡 Cargando datos...")
-data = loader.get_data()
+data = loader.get_data(limit=500)
 
 print("🧠 Entrenando modelo...")
-model = trainer.train(data)
-strategy.model = model
+try:
+    model = trainer.train(data)
+    strategy.model = model
+except Exception as e:
+    print(f"⚠️ Error entrenando modelo: {e}")
+    exit()
 
 print("📊 Backtesting...")
 bt = Backtester(strategy)
-result = bt.run(data)
-print(f"💰 Resultado: {result}")
+results = bt.run(data)
 
-print("🚀 Iniciando bot...")
+print("💰 Balance:", results["balance"])
+print("📊 Trades:", results["trades"])
+print("🎯 Winrate:", results["winrate"], "%")
+
+print("🚀 Bot en ejecución...")
 
 while True:
-    data = loader.get_data()
+    data = loader.get_data(limit=500)
     strategy.data = data
 
     signal = strategy.generate_signal()
 
-    if risk.validate(signal):
-        msg = f"🚨 Señal: {signal}"
+    if risk.validate(signal) and signal != "HOLD":
+        msg = f"🚨 {signal}"
         print(msg)
         sender.send(msg)
         db.insert(signal)
