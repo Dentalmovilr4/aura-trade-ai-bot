@@ -2,37 +2,41 @@ class Backtester:
     def __init__(self, strategy):
         self.strategy = strategy
 
-    def run(self, data):
+    def run(self, data_1m, data_5m):
         balance = 1000
         position = None
-        entry_price = 0
+        entry = 0
 
         trades = 0
         wins = 0
 
-        for i in range(len(data)):
-            self.strategy.data = data.iloc[:i+1]
-            signal = self.strategy.generate_signal()
+        for i in range(200, len(data_1m)):
+            self.strategy.data_1m = data_1m.iloc[:i]
+            self.strategy.data_5m = data_5m.iloc[:i]
 
-            price = data.iloc[i]["close"]
+            signal = self.strategy.generate_signal()
+            price = data_1m.iloc[i]["close"]
 
             # ENTRADA
             if signal == "BUY" and position is None:
                 position = "LONG"
-                entry_price = price
+                entry = price
                 trades += 1
 
-            # SALIDA
-            elif signal == "SELL" and position == "LONG":
-                profit = price - entry_price
-                balance += profit
+            # TP / SL
+            if position == "LONG":
+                profit = price - entry
 
-                if profit > 0:
+                if profit > 5:  # take profit
+                    balance += profit
                     wins += 1
+                    position = None
 
-                position = None
+                elif profit < -3:  # stop loss
+                    balance += profit
+                    position = None
 
-        winrate = (wins / trades * 100) if trades > 0 else 0
+        winrate = (wins / trades * 100) if trades else 0
 
         return {
             "balance": balance,
