@@ -1,10 +1,17 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class RiskManager:
     def __init__(self):
-        self.max_trades = 5
-        self.current_trades = 0
+        self.risk_percent = float(os.getenv("RISK_PERCENT", 0.01))
+        self.balance = float(os.getenv("ACCOUNT_BALANCE", 1000))
+
+    def calculate_position_size(self, price):
+        risk_amount = self.balance * self.risk_percent
+        qty = risk_amount / price
+        return round(qty, 6)
 
     def validate(self, signal):
-        if signal in ["BUY", "SELL"] and self.current_trades < self.max_trades:
-            self.current_trades += 1
-            return True
-        return False
+        return signal in ["BUY", "SELL"]
