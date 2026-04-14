@@ -14,6 +14,8 @@ class Strategy:
         df = df.dropna()
         if len(df) < 50:
             return None
+if df is None or df.empty or 'close' not in df.columns:
+    return None
 
         return df.iloc[-1]
 
