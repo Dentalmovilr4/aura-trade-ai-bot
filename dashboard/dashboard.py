@@ -1,14 +1,19 @@
 import streamlit as st
-from src.data_loader import DataLoader
-from src.indicators import calculate_ema, calculate_rsi
+import sys
+import os
 
-st.title("Aura Trade AI Bot")
+# 🔥 Agregar src al path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-loader = DataLoader()
-data = loader.get_data()
+from database import Database
 
-data['ema'] = calculate_ema(data)
-data['rsi'] = calculate_rsi(data)
+db = Database()
 
-st.line_chart(data[['close','ema']])
-st.line_chart(data['rsi'])
+st.title("📊 Aura Trade AI Bot")
+
+trades = db.get_all()
+
+st.write("### Historial de Trades")
+st.write(trades)
+
+st.write(f"Total trades: {len(trades)}")
