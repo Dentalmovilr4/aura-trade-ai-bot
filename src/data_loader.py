@@ -1,41 +1,43 @@
 import requests
 import pandas as pd
+import time
 
 class DataLoader:
     def __init__(self):
         self.base_url = "https://api.bybit.com"
 
-    def get_data(self, symbol="BTCUSDT", interval="1", limit=500):
-        """
-        interval:
-        1   = 1 minuto
-        5   = 5 minutos
-        15  = 15 minutos
-        60  = 1 hora
-        """
-
+    def get_historical_data(self, symbol="BTCUSDT", interval="1", total=5000):
         url = f"{self.base_url}/v5/market/kline"
+        all_data = []
+        cursor = None
 
-        params = {
-            "category": "linear",   # USDT perpetual
-            "symbol": symbol,
-            "interval": interval,
-            "limit": limit
-        }
+        while len(all_data) < total:
+            params = {
+                "category": "linear",
+                "symbol": symbol,
+                "interval": interval,
+                "limit": 200,
+            }
 
-        response = requests.get(url, params=params)
-        data = response.json()
+            if cursor:
+                params["cursor"] = cursor
 
-        if "result" not in data or "list" not in data["result"]:
-            raise ValueError(f"❌ Error obteniendo datos Bybit: {data}")
+            res = requests.get(url, params=params).json()
 
-        raw = data["result"]["list"]
+            data = res["result"]["list"]
+            cursor = res["result"].get("nextPageCursor")
 
-        # Bybit devuelve en orden inverso (más reciente primero)
-        raw.reverse()
+            all_data.extend(data)
 
-        df = pd.DataFrame(raw, columns=[
-            "time", "open", "high", "low", "close", "volume", "turnover"
+            if not cursor:
+                break
+
+            time.sleep(0.2)
+
+        all_data.reverse()
+
+        df = pd.DataFrame(all_data, columns=[
+            "time","open","high","low","close","volume","turnover"
         ])
 
         df["close"] = df["close"].astype(float)
@@ -43,6 +45,6 @@ class DataLoader:
         return df[["close"]]
 
     def get_multi_timeframe(self):
-        data_1m = self.get_data(interval="1")
-        data_5m = self.get_data(interval="5")
+        data_1m = self.get_historical_data(interval="1", total=1000)
+        data_5m = self.get_historical_data(interval="5", total=1000)
         return data_1m, data_5m
