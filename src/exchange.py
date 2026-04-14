@@ -6,7 +6,7 @@ load_dotenv()
 
 class Exchange:
     def __init__(self):
-        self.exchange = ccxt.binance({
+        self.exchange = ccxt.bybit({
             "apiKey": os.getenv("API_KEY"),
             "secret": os.getenv("API_SECRET"),
             "enableRateLimit": True
