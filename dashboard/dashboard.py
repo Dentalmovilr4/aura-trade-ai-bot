@@ -1,19 +1,24 @@
 import streamlit as st
-import sys
-import os
+import requests
 
-# 🔥 Agregar src al path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+st.title("💸 Aura Trade SaaS")
 
-from database import Database
+users = requests.get("http://localhost:5000/users").json()
 
-db = Database()
+st.write("### Usuarios conectados")
+st.write(users)
 
-st.title("📊 Aura Trade AI Bot")
+st.write("### Añadir usuario")
 
-trades = db.get_all()
+name = st.text_input("Nombre")
+key = st.text_input("API Key")
+secret = st.text_input("API Secret")
+balance = st.number_input("Balance")
 
-st.write("### Historial de Trades")
-st.write(trades)
-
-st.write(f"Total trades: {len(trades)}")
+if st.button("Agregar"):
+    requests.post("http://localhost:5000/add_user", json={
+        "name": name,
+        "api_key": key,
+        "api_secret": secret,
+        "balance": balance
+    })
