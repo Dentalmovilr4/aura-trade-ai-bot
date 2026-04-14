@@ -1,8 +1,11 @@
+flask
+flask-cors
 pandas
 numpy
 scikit-learn
 requests
 streamlit
+google-generativeai
 joblib
 python-dotenv
 tensorflow
