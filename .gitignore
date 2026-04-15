@@ -1,3 +1,25 @@
 .env
 __pycache__/
 models/model.pkl
+trading.db
+# 🔒 Secrets
+.env
+*.env
+
+# 🧠 Modelos
+models/
+*.h5
+*.pkl
+
+# 🗄️ DB
+*.db
+
+# 🐍 Python
+__pycache__/
+*.pyc
+
+# Logs
+logs/
+
+# OS
+.DS_Store
